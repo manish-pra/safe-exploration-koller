@@ -30,7 +30,7 @@ class GpCemSSM(CemSSM):
 
         self._training_iterations = conf.exact_gp_training_iterations
 
-        self._likelihood = GaussianLikelihood(batch_size=state_dimen)
+        self._likelihood = GaussianLikelihood(batch_size=state_dimen, noise_constraint=gpytorch.constraints.GreaterThan(0.0),)
         if model is None:
             self._model = MultiOutputGP(train_x=None, train_y=None, likelihood=self._likelihood,
                                         kernel=self._create_kernel(conf, state_dimen, action_dimen),

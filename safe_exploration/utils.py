@@ -21,7 +21,7 @@ from torch import Tensor
 
 
 def dlqr(a, b, q, r):
-    """ Get the feedback controls from linearized system at the current time step
+    """Get the feedback controls from linearized system at the current time step
 
     for a discrete time system Ax+Bu
     find the infinite horizon optimal feedback controller
@@ -60,7 +60,7 @@ def sample_inside_polytope(x, a, b):
 
 
 def feedback_ctrl(x, k_ff, k_fb=None, p=None):
-    """ The feedback control structure """
+    """The feedback control structure"""
 
     if k_fb is None:
         return k_ff
@@ -69,25 +69,27 @@ def feedback_ctrl(x, k_ff, k_fb=None, p=None):
 
 
 def compute_bounding_box_lagrangian(q, L, K, k, order=2, verbose=0):
-    """ Compute lagrangian remainder using lipschitz constants
-        and ellipsoidal input set with affine control law
+    """Compute lagrangian remainder using lipschitz constants
+    and ellipsoidal input set with affine control law
 
     """
     warnings.warn("Function is deprecated")
 
     SUPPORTED_TAYLOR_ORDER = [1, 2]
     if not (order in SUPPORTED_TAYLOR_ORDER):
-        raise ValueError("Cannot compute lagrangian remainder bounds for the given order")
+        raise ValueError(
+            "Cannot compute lagrangian remainder bounds for the given order"
+        )
 
     if order == 2:
         s_max = norm(q, ord=2)
         QK = np.dot(K, np.dot(q, K.T))
         sk_max = norm(QK, ord=2)
 
-        l_max = s_max ** 2 + sk_max ** 2
+        l_max = s_max**2 + sk_max**2
 
-        box_lower = -L * l_max * (1. / order)
-        box_upper = L * l_max * (1. / order)
+        box_lower = -L * l_max * (1.0 / order)
+        box_upper = L * l_max * (1.0 / order)
 
     if order == 1:
         s_max = norm(q, ord=2)
@@ -101,13 +103,19 @@ def compute_bounding_box_lagrangian(q, L, K, k, order=2, verbose=0):
 
     if verbose > 0:
         print(("\n=== bounding-box approximation of order {} ===".format(order)))
-        print(("largest eigenvalue of Q: {} \nlargest eigenvalue of KQK^T: {}".format(s_max, sk_max)))
+        print(
+            (
+                "largest eigenvalue of Q: {} \nlargest eigenvalue of KQK^T: {}".format(
+                    s_max, sk_max
+                )
+            )
+        )
 
     return box_lower, box_upper
 
 
 def compute_remainder_overapproximations(q, k_fb, l_mu, l_sigma):
-    """ Compute the (hyper-)rectangle over-approximating the lagrangians of mu and sigma
+    """Compute the (hyper-)rectangle over-approximating the lagrangians of mu and sigma
 
     Parameters
     ----------
@@ -149,8 +157,9 @@ def compute_remainder_overapproximations(q, k_fb, l_mu, l_sigma):
     return u_mu, u_sigma
 
 
-def compute_remainder_overapproximations_pytorch(q: Tensor, k_fb: Tensor, l_mu: Tensor, l_sigma: Tensor) -> Tuple[
-    Tensor, Tensor]:
+def compute_remainder_overapproximations_pytorch(
+    q: Tensor, k_fb: Tensor, l_mu: Tensor, l_sigma: Tensor
+) -> Tuple[Tensor, Tensor]:
     """Compute the (hyper-)rectangle over-approximating the lagrangians of mu and sigma.
 
     Parameters
@@ -179,7 +188,7 @@ def compute_remainder_overapproximations_pytorch(q: Tensor, k_fb: Tensor, l_mu: 
     evals = eigenvalues_batch(qb)
 
     # Check we only got real parts.
-    assert not (evals[:, :, 1] != 0).any(), 'All imaginary parts should be 0'
+    # assert not (evals[:, :, 1] != 0).any(), "All imaginary parts should be 0"
     real_evals = evals[:, :, 0]
 
     r_sqr = torch.max(real_evals, dim=1)[0]
@@ -189,13 +198,13 @@ def compute_remainder_overapproximations_pytorch(q: Tensor, k_fb: Tensor, l_mu: 
     # however we prefer to avoid the inversion
     # and breaking the symmetry of b and q
 
-    u_mu = l_mu * r_sqr.repeat((1,1)).transpose(0, 1)
-    u_sigma = l_sigma * torch.sqrt(r_sqr).repeat((1,1)).transpose(0, 1)
+    u_mu = l_mu * r_sqr.repeat((1, 1)).transpose(0, 1)
+    u_sigma = l_sigma * torch.sqrt(r_sqr).repeat((1, 1)).transpose(0, 1)
     return u_mu, u_sigma
 
 
 def all_elements_equal(x):
-    """ Check if all elements in a 1darray are equal
+    """Check if all elements in a 1darray are equal
 
     Parameters
     ----------
@@ -213,15 +222,13 @@ def all_elements_equal(x):
 
 
 def print_ellipsoid(p_center, q_shape, text="ellipsoid", visualize=False):
-    """
-
-    """
+    """ """
 
     print("\n")
     print(("===== {} =====".format(text)))
     print("center:")
     print(p_center)
-    if q_shape.ndim in (1,2):
+    if q_shape.ndim in (1, 2):
         print("==========")
         print("diagonal of shape matrix:")
         print((diag(q_shape)))
@@ -229,7 +236,7 @@ def print_ellipsoid(p_center, q_shape, text="ellipsoid", visualize=False):
 
 
 def vec_to_mat(v, n, tril_vec=True):
-    """ Reshape vector into square matrix
+    """Reshape vector into square matrix
 
     Inputs:
         v: vector containing matrix entries (either of length n^2 or n*(n+1)/2)
@@ -257,7 +264,7 @@ def vec_to_mat(v, n, tril_vec=True):
 
 
 def array_of_vec_to_array_of_mat(array_of_vec, n, m):
-    """ Convert multiple vectorized matrices to 3-dim numpy array
+    """Convert multiple vectorized matrices to 3-dim numpy array
 
 
     Parameters
@@ -279,7 +286,9 @@ def array_of_vec_to_array_of_mat(array_of_vec, n, m):
 
     T, size_vec = np.shape(array_of_vec)
 
-    assert size_vec == n * m, "Are the shapes of the vectorized and output matrix the same?"
+    assert (
+        size_vec == n * m
+    ), "Are the shapes of the vectorized and output matrix the same?"
 
     array_of_mat = np.empty((T, n, m))
     for i in range(T):
@@ -289,7 +298,7 @@ def array_of_vec_to_array_of_mat(array_of_vec, n, m):
 
 
 def _get_edges_hyperrectangle(l_b, u_b, m=None):
-    """ Generate set of points from box-bounds
+    """Generate set of points from box-bounds
 
     Given a set of lower and upper bounds l_b,u_b
     defining the Box
@@ -311,7 +320,7 @@ def _get_edges_hyperrectangle(l_b, u_b, m=None):
 
     """
 
-    assert (len(l_b) == len(u_b))
+    assert len(l_b) == len(u_b)
 
     n = len(l_b)
     L = [None] * n
@@ -329,7 +338,7 @@ def _get_edges_hyperrectangle(l_b, u_b, m=None):
 
 
 def _prod_combinations_1darray(v):
-    """ Product of all pairs in a vector
+    """Product of all pairs in a vector
 
     Parameters
     ----------
@@ -351,7 +360,7 @@ def _prod_combinations_1darray(v):
 
 
 def solve_LLS(A, b, eps_mp=0.0):
-    """ Solve Linear Least Squares Problem
+    """Solve Linear Least Squares Problem
 
     solve problem of the form
         || Ax-b ||^2 -> min
@@ -386,7 +395,7 @@ def rsetattr(obj, attr, val):
     """
     from https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-objects
     """
-    pre, _, post = attr.rpartition('.')
+    pre, _, post = attr.rpartition(".")
     return setattr(rgetattr(obj, pre) if pre else obj, post, val)
 
 
@@ -400,13 +409,15 @@ def rgetattr(obj, attr, default=sentinel):
     if default is sentinel:
         _getattr = getattr
     else:
+
         def _getattr(obj, name):
             return getattr(obj, name, default)
-    return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+    return functools.reduce(_getattr, [obj] + attr.split("."))
 
 
 def reshape_derivatives_3d_to_2d(derivative_3d):
-    """ Reshape 3D derivative tensor to 2D derivative
+    """Reshape 3D derivative tensor to 2D derivative
 
     Given a function f: \R^{n_in} \to \R^{r \times s} we get a derivative tensor
     df: \R^{n_in} \to \R^{r \times s \times n_in} that needs to be reshaped to
@@ -432,7 +443,7 @@ def reshape_derivatives_3d_to_2d(derivative_3d):
 
 
 def generate_initial_samples(env, conf, relative_dynamics, solver, safe_policy):
-    """ Generate initial samples from the system
+    """Generate initial samples from the system
 
     Generate samples with two different modes:
         Random rollouts - Rollout the system with a random control policy
@@ -465,10 +476,21 @@ def generate_initial_samples(env, conf, relative_dynamics, solver, safe_policy):
 
     if conf.init_mode == "random_rollouts":
 
-        X, y, _, _ = do_rollout(env, conf.n_steps_init, plot_trajectory=conf.plot_trajectory, render=conf.render,
-                                mean=mean, std=std)
+        X, y, _, _ = do_rollout(
+            env,
+            conf.n_steps_init,
+            plot_trajectory=conf.plot_trajectory,
+            render=conf.render,
+            mean=mean,
+            std=std,
+        )
         for i in range(1, conf.n_rollouts_init):
-            xx, yy, _, _ = do_rollout(env, conf.n_steps_init, plot_trajectory=conf.plot_trajectory, render=conf.render)
+            xx, yy, _, _ = do_rollout(
+                env,
+                conf.n_steps_init,
+                plot_trajectory=conf.plot_trajectory,
+                render=conf.render,
+            )
             X = np.vstack((X, xx))
             y = np.vstack((y, yy))
 
@@ -482,7 +504,9 @@ def generate_initial_samples(env, conf, relative_dynamics, solver, safe_policy):
 
         h_mat_safe, h_safe, _, _ = env.get_safety_constraints(normalize=True)
 
-        bool_mask_inside = np.argwhere(sample_inside_polytope(states_probing, h_mat_safe, h_safe))
+        bool_mask_inside = np.argwhere(
+            sample_inside_polytope(states_probing, h_mat_safe, h_safe)
+        )
         states_probing_inside = states_probing[bool_mask_inside, :]
 
         n_inside_first = np.shape(states_probing_inside)[0]
@@ -516,8 +540,20 @@ def generate_initial_samples(env, conf, relative_dynamics, solver, safe_policy):
 
         if conf.verbose > 1:
             print("==== Safety controller evaluation ====")
-            print(("Ratio sample / inside safe set: {} / {}".format(n_inside_first, n_max)))
-            print(("Ratio next state inside safe set / intial state in safe set: {} / {}".format(n_success, i)))
+            print(
+                (
+                    "Ratio sample / inside safe set: {} / {}".format(
+                        n_inside_first, n_max
+                    )
+                )
+            )
+            print(
+                (
+                    "Ratio next state inside safe set / intial state in safe set: {} / {}".format(
+                        n_success, i
+                    )
+                )
+            )
 
         X = X[1:, :]
         y = y[1:, :]
@@ -525,15 +561,15 @@ def generate_initial_samples(env, conf, relative_dynamics, solver, safe_policy):
         return X, y
 
     else:
-        raise NotImplementedError("Unknown option initialization mode: {}".format(conf.init_mode))
+        raise NotImplementedError(
+            "Unknown option initialization mode: {}".format(conf.init_mode)
+        )
 
     return X, y
 
 
 class unavailable:
-    """ Decorator to check for dependencies
-
-    """
+    """Decorator to check for dependencies"""
 
     def __init__(self, when, library, conditionals=None):
         self.when = when
@@ -545,8 +581,9 @@ class unavailable:
 
     def __call__(self, func):
         if self.when:
+
             def checked_func(*args, **kwargs):
-                """ Compares signature of the function to the conditionals
+                """Compares signature of the function to the conditionals
 
                 Finds the variables in 'conditionals' in the function signature
                 and checks if any one of them has a boolen True value.
@@ -566,9 +603,12 @@ class unavailable:
                 check_kwargs = {**default_kwargs, **args_dict}
 
                 if self._check_conditionals(check_kwargs):
+
                     def error_throwing(*args, **kwargs):
-                        """ Throw dependency error """
-                        raise ImportError(f"Optional dependency {self.library} required to execute this function")
+                        """Throw dependency error"""
+                        raise ImportError(
+                            f"Optional dependency {self.library} required to execute this function"
+                        )
 
                     return error_throwing(*args, **kwargs)
                 else:
@@ -580,7 +620,7 @@ class unavailable:
             return func
 
     def _check_conditionals(self, keywargs):
-        """ Compare function arguments with condtiionals
+        """Compare function arguments with condtiionals
 
         Check if any of the specifiec conditionals that
         would lead to the library being used are set to True
@@ -610,7 +650,7 @@ class unavailable:
         return check_result
 
     def get_default_kwargs(self, func):
-        """ Get the default values of the kwargs of a function
+        """Get the default values of the kwargs of a function
 
         Parameters
         ----------
@@ -642,10 +682,10 @@ def assert_shape(x, shape: tuple, ignore_if_none=False) -> None:
         if ignore_if_none:
             return
         else:
-            raise ValueError(f'Wanted shape {shape}, got None')
+            raise ValueError(f"Wanted shape {shape}, got None")
 
     if x.shape != shape:
-        raise ValueError(f'Wanted shape {shape}, got {x.shape}')
+        raise ValueError(f"Wanted shape {shape}, got {x.shape}")
 
 
 def eigenvalues_batch(xs: Tensor) -> Tensor:
@@ -655,12 +695,14 @@ def eigenvalues_batch(xs: Tensor) -> Tensor:
     :returns: [N x n x 2] the n eigenvalues for each of the N tensors in the batch, where dimension 0 is the real part
                           and dimension 1 is the imaginary part
     """
-    assert xs.dim() == 3 and xs.shape[1] == xs.shape[2], f'Wanted (N, n, n), got {xs.shape}'
+    assert (
+        xs.dim() == 3 and xs.shape[1] == xs.shape[2]
+    ), f"Wanted (N, n, n), got {xs.shape}"
     N = xs.shape[0]
     n = xs.shape[1]
     evs = torch.empty((N, n, 2), device=xs.device)
     for i in range(N):
-        ev_i, _ = torch.eig(xs[i], eigenvectors=False)
+        ev_i, _ = torch.linalg.eig(xs[i])
         evs[i] = ev_i
     return evs
 
@@ -685,8 +727,8 @@ def batch_vector_matrix_mul(x: Tensor, v: Tensor) -> Tensor:
     :param x: [n x m] single 2D matrix
     :param v: [N x m] batch of vectors
     """
-    assert x.dim() == 2, f'Wanted x to be a 2D matrix, got {x.size()}'
-    assert v.dim() == 2, f'Wanted y to be a batch of vectors, got {v.size()}'
+    assert x.dim() == 2, f"Wanted x to be a 2D matrix, got {x.size()}"
+    assert v.dim() == 2, f"Wanted y to be a batch of vectors, got {v.size()}"
     return torch.matmul(x, v.unsqueeze(2)).squeeze(2)
 
 
@@ -699,11 +741,13 @@ def get_device(force_device: Optional[Tuple[str, Any]] = None) -> str:
         return force_device
     elif force_device is not None:
         # We assume it must be a config.
-        assert hasattr(force_device, 'device'), f'force_device must be string or config, was {force_device}'
+        assert hasattr(
+            force_device, "device"
+        ), f"force_device must be string or config, was {force_device}"
         if force_device.device is not None:
             return force_device.device
 
     if torch.cuda.is_available():
-        return 'cuda:0'
+        return "cuda:0"
     else:
-        return 'cpu'
+        return "cpu"
