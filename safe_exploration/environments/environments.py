@@ -17,7 +17,7 @@ from casadi import reshape as cas_reshape
 from matplotlib.axes import Axes
 from numpy import ndarray
 from numpy.matlib import repmat
-from polytope import Polytope
+# from polytope import Polytope
 from scipy.integrate import ode, odeint
 from scipy.signal import cont2discrete
 from scipy.spatial import ConvexHull
