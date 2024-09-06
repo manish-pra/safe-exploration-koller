@@ -83,12 +83,6 @@ class GpCemSSM(CemSSM):
     def _predict(self, z: Tensor) -> Tuple[Tensor, Tensor]:
         pred_mean, pred_var = self.predict_raw(z)
 
-        # NOTE: this transformation is specific to testing code for CDC 2024 smapling GP-MPC paper
-        # transform into correct shape
-        pred_mean = pred_mean[0, :, :, 0]
-        pred_var = pred_var[0, :, :, 0]
-
-        # Koller code again
         pred_mean = pred_mean.transpose(0, 1)
         pred_var = pred_var.transpose(0, 1)
 
