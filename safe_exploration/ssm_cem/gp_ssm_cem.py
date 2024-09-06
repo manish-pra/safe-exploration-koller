@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from gpytorch import ExactMarginalLogLikelihood
 from gpytorch.kernels import ScaleKernel, RBFKernel, LinearKernel, Kernel
-from gpytorch.likelihoods import GaussianLikelihood
+from gpytorch.likelihoods import GaussianLikelihood, MultitaskGaussianLikelihood
 from torch import Tensor
 
 from .ssm_cem import CemSSM
@@ -21,7 +21,7 @@ class GpCemSSM(CemSSM):
     does not implement the linearization and differentiation functions which are only require for Casadi.
     """
 
-    def __init__(self, conf, state_dimen: int, action_dimen: int, model: Optional[MultiOutputGP] = None):
+    def __init__(self, conf, state_dimen: int, action_dimen: int, model: Optional[MultiOutputGP] = None, likelihood = None):
         """Constructs a new instance.
 
         :param model: Set during unit testing to inject a model.
@@ -30,7 +30,11 @@ class GpCemSSM(CemSSM):
 
         self._training_iterations = conf.exact_gp_training_iterations
 
-        self._likelihood = GaussianLikelihood(batch_size=state_dimen, noise_constraint=gpytorch.constraints.GreaterThan(0.0),)
+        if likelihood is None:
+            self._likelihood = GaussianLikelihood(batch_size=state_dimen, noise_constraint=gpytorch.constraints.GreaterThan(0.0),)
+        else:
+            self._likelihood = likelihood
+
         if model is None:
             self._model = MultiOutputGP(train_x=None, train_y=None, likelihood=self._likelihood,
                                         kernel=self._create_kernel(conf, state_dimen, action_dimen),
@@ -78,6 +82,13 @@ class GpCemSSM(CemSSM):
 
     def _predict(self, z: Tensor) -> Tuple[Tensor, Tensor]:
         pred_mean, pred_var = self.predict_raw(z)
+
+        # NOTE: this transformation is specific to testing code for CDC 2024 smapling GP-MPC paper
+        # transform into correct shape
+        pred_mean = pred_mean[0, :, :, 0]
+        pred_var = pred_var[0, :, :, 0]
+
+        # Koller code again
         pred_mean = pred_mean.transpose(0, 1)
         pred_var = pred_var.transpose(0, 1)
 
@@ -90,7 +101,10 @@ class GpCemSSM(CemSSM):
     def predict_raw(self, z: Tensor) -> Tuple[Tensor, Tensor]:
         N = z.size(0)
         assert_shape(z, (N, self.num_states + self.num_actions))
-        pred = self._likelihood(self._model(z))
+
+        # pred = self._likelihood(self._model(z))
+        # NOTE: this adaptation is specific to testing code for CDC 2024 smapling GP-MPC paper (no process noise)
+        pred = self._model(z)
         return pred.mean, pred.variance
 
     def _update_model(self, x_train: Tensor, y_train: Tensor) -> None:
