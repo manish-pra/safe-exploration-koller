@@ -22,7 +22,24 @@ from .utils_ellipsoid import (
     ellipsoid_from_rectangle_pytorch,
     sum_two_ellipsoids_pytorch,
 )
+import numpy as np
+import numpy.linalg as nLa
+import matplotlib.pyplot as plt
 
+plot_ellpsoids = False
+def plot_ellpsoid(p_center, q_shape):
+    # add plot for debugging            
+    r = nLa.cholesky(q_1.detach()).T
+    r = r[:, :, 0]
+    # checks spd inside the function
+    t = np.linspace(0, 2 * np.pi, 100)
+    z = [np.cos(t), np.sin(t)]
+    ellipse = np.dot(r, z) + p_1.detach().numpy().T
+    p1_x = p_1.detach().numpy()[0][0]
+    p1_y = p_1.detach().numpy()[0][1]
+
+    plt.plot(ellipse[0, :], ellipse[1, :])
+    return ellipse
 
 def onestep_reachability(
     p_center: Tensor,
@@ -123,7 +140,6 @@ def onestep_reachability(
                 text="uncertainty first state",
             )
 
-        return p_1.detach(), q_1.detach(), sigm_0.detach()
     else:
         # The state is a (ellipsoid) set.
         if verbose > 0:
@@ -232,7 +248,23 @@ def onestep_reachability(
             # print((torch.det(torch.cholesky(q_1))).detach().cpu().numpy())
             print("volume of ellipsoid summed individually")
 
-        return p_1.detach(), q_1.float().detach(), sigm_0.detach()
+    if plot_ellpsoids:
+        if q_shape is not None:
+            plot_ellpsoid(p_0, Q_0)
+            plot_ellpsoid(p_lagrange_mu, Q_lagrange_mu)
+            plot_ellpsoid(p_lagrange_sigm, Q_lagrange_sigm)
+            plot_ellpsoid(p_sum_lagrange, Q_sum_lagrange)
+            pass
+
+        plot_ellpsoid(p_1, q_1)    
+        plt.axhline(rkhs_bounds[0,0].detach().numpy() + p1_y)
+        plt.axhline(-rkhs_bounds[0,0].detach().numpy() + p1_y)
+        plt.axvline(rkhs_bounds[0,1].detach().numpy() + p1_x)
+        plt.axvline(-rkhs_bounds[0,1].detach().numpy() + p1_x)
+
+    # NOTE: removed .float(), since it was generating incompatible float32 dtype
+    # return p_1.detach(), q_1.float().detach(), sigm_0.detach()
+    return p_1.detach(), q_1.detach(), sigm_0.detach()
 
 
 def lin_ellipsoid_safety_distance(

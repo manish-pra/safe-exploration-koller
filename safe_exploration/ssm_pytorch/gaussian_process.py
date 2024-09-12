@@ -2,7 +2,7 @@
 from typing import Optional
 
 import gpytorch
-import hessian
+# import hessian
 import numpy as np
 import torch
 from gpytorch.distributions import MultivariateNormal
