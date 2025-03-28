@@ -703,7 +703,8 @@ def eigenvalues_batch(xs: Tensor) -> Tensor:
     evs = torch.empty((N, n, 2), device=xs.device)
     for i in range(N):
         ev_i, _ = torch.linalg.eig(xs[i])
-        evs[i] = ev_i
+        evs[i,:,0] = ev_i.real
+        evs[i,:,1] = ev_i.imag
     return evs
 
 
