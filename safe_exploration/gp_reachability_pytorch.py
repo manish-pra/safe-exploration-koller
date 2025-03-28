@@ -334,7 +334,7 @@ def _fix_zeros_nans(x: Tensor, var_name: str) -> Tuple[Tensor, bool]:
 
     if (x == 0).any():
         print(f"WARNING: found 0 in {var_name} but carried on", x)
-        x[x <= 0] = 1e-5
+        x[x <= 0] = 1e-10
         return x, True
 
     return x, True
